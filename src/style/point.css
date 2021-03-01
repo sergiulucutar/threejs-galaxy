@@ -1,0 +1,54 @@
+.point {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.point_label {
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+
+  border: 3px solid white;
+  border-radius: 50%;
+
+  transition: transform 0.2s ease-in-out;
+}
+
+.point_label::after {
+  content: '';
+  position: absolute;
+
+  width: 100%;
+  height: 100%;
+
+  border-radius: 50%;
+}
+
+.point[data-type="1"] .point_label::after {
+  background-color: red;
+}
+
+.point[data-type="2"] .point_label::after {
+  background-color: yellow;
+}
+
+.point[data-type="3"] .point_label::after {
+  background-color: blue;
+}
+
+.point[data-type="4"] .point_label::after {
+  background-color: green;
+}
+
+.point.point-selected .point_label, .point_label:hover {
+  transform: scale(2);
+}
+
+.point.point-hidden .point_label {
+  transform: scale(0);
+}

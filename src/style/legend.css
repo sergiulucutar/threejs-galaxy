@@ -1,0 +1,50 @@
+.ui_legend {
+  grid-row: 2;
+  align-self: flex-end;
+
+  stroke-linecap: round;
+}
+
+.ui_legend ul {
+  list-style: none;
+}
+
+.ui_legend li {
+  position: relative;
+  padding-left: 20px;
+  color: white;
+
+  font-size: 1.4rem;
+}
+
+.ui_legend li::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+
+  display: block;
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+  border: 2px solid white;
+
+  transform: translate(-100%, -50%);
+}
+
+.ui_legend li:nth-child(1)::before {
+  background-color: red;
+}
+
+.ui_legend li:nth-child(2)::before {
+  background-color: yellow;
+}
+
+.ui_legend li:nth-child(3)::before {
+  background-color: blue;
+}
+
+.ui_legend li:nth-child(4)::before {
+  background-color: green;
+}
