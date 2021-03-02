@@ -4,8 +4,10 @@ import {
   OrbitControls
 } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
-import { interestPointTypeSelector } from './interactions';
-import { gameState } from './game';
+import { interestPointTypeSelector } from './components/interactions';
+import { gameState } from './components/game';
+import { generateGlaxy } from './components/galaxy';
+import { createShaper } from './components/shaper';
 
 const canvas = document.querySelector('main canvas');
 const sizes = {
@@ -15,6 +17,10 @@ const sizes = {
 const datGUI = new dat.GUI({
   closed: true
 });
+
+const textureLoader = new THREE.TextureLoader();
+const bgTexture = textureLoader.load('/NormalMap.png');
+const heightMapTexture = textureLoader.load('/NormalMap.png');
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 1, 1000);
@@ -31,6 +37,8 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+// const light = new THREE.AmbientLight();
+// scene.add(light);
 
 // Generate skyBox
 const cubeTextureLoader = new THREE.CubeTextureLoader();
@@ -57,61 +65,11 @@ parameters.randomnessPower = 3;
 parameters.insideColor = '#ff6030';
 parameters.outsideColor = '#1b3984';
 
-let geometry;
-let material;
-let points;
+// const shaper = createShaper(sizes, bgTexture, heightMapTexture);
+// scene.add(shaper);
 
-const generateGlaxy = () => {
-
-  if (geometry && material && points) {
-    geometry.dispose();
-    material.dispose();
-    scene.remove(points);
-  }
-
-  geometry = new THREE.BufferGeometry();
-  material = new THREE.PointsMaterial({
-    size: parameters.size,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    vertexColors: true
-  });
-
-  const positions = new Float32Array(parameters.count * 3);
-  const colors = new Float32Array(parameters.count * 3);
-
-  const colorInside = new THREE.Color(parameters.insideColor);
-  const colorOutside = new THREE.Color(parameters.outsideColor);
-
-  for (let i = 0; i < parameters.count; i++) {
-    const i3 = i * 3;
-    const radius = Math.random() * parameters.radius;
-
-    const branchCount = Math.PI * 2 * ((i % parameters.branches) / parameters.branches);
-    const spinAngle = radius * parameters.spin;
-
-    const randomX = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1);
-    const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1);
-    const randomZ = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1);
-
-    positions[i3] = Math.cos(branchCount + spinAngle) * radius + randomX;
-    positions[i3 + 1] = randomY;
-    positions[i3 + 2] = Math.sin(branchCount + spinAngle) * radius + randomZ;
-
-    // Color
-    const mixedColor = colorInside.clone().lerp(colorOutside, radius / parameters.radius);
-    colors[i3] = mixedColor.r;
-    colors[i3 + 1] = mixedColor.g;
-    colors[i3 + 2] = mixedColor.b;
-  }
-
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  points = new THREE.Points(geometry, material);
-  scene.add(points);
-
-}
+const galaxy = generateGlaxy(parameters);
+scene.add(galaxy);
 
 const interestPoints = [];
 const generatePointsOfInterest = () => {
@@ -131,27 +89,14 @@ const generatePointsOfInterest = () => {
   }
 }
 
-
-generateGlaxy();
 generatePointsOfInterest();
-
-
-datGUI.add(parameters, 'count').min(1000).max(1000000).step(100).onFinishChange(generateGlaxy);
-datGUI.add(parameters, 'size').min(0.001).max(0.1).step(0.001).onFinishChange(generateGlaxy);
-datGUI.add(parameters, 'radius').min(1).max(20).step(1).onFinishChange(generateGlaxy);
-datGUI.add(parameters, 'branches').min(2).max(20).step(1).onFinishChange(generateGlaxy);
-datGUI.add(parameters, 'spin').min(-5).max(5).step(0.1).onFinishChange(generateGlaxy);
-datGUI.add(parameters, 'randomness').min(0).max(2).step(0.001).onFinishChange(generateGlaxy);
-datGUI.add(parameters, 'randomnessPower').min(1).max(10).step(0.1).onFinishChange(generateGlaxy);
-datGUI.addColor(parameters, 'insideColor').onFinishChange(generateGlaxy);
-datGUI.addColor(parameters, 'outsideColor').onFinishChange(generateGlaxy);
-
 
 // const clock = new THREE.Clock();
 const loop = () => {
   //   const enableTime = clock.getElapsedTime();
 
   cameraControls.update();
+  // shaper.lookAt(camera.position);
 
   for (const point of interestPoints) {
     const screenPosition = point.position.clone();
@@ -160,11 +105,13 @@ const loop = () => {
     point.element.style.transform = `translate(${screenPosition.x * sizes.width * 0.5}px, ${-screenPosition.y * sizes.height * 0.5}px)`
   }
 
-
   renderer.render(scene, camera);
 
   requestAnimationFrame(loop);
 }
+
+
+// DOM Interactions
 
 const pointsDOM = [...document.querySelectorAll('.point')];
 const getRoundValues = () => {
@@ -184,5 +131,17 @@ const nextRound = () => {
 
 document.querySelector('.game_controls button').addEventListener('click', nextRound);
 gameState.updateUI();
+
+
+// Start
+datGUI.add(parameters, 'count').min(1000).max(1000000).step(100).onFinishChange(generateGlaxy);
+datGUI.add(parameters, 'size').min(0.001).max(0.1).step(0.001).onFinishChange(generateGlaxy);
+datGUI.add(parameters, 'radius').min(1).max(20).step(1).onFinishChange(generateGlaxy);
+datGUI.add(parameters, 'branches').min(2).max(20).step(1).onFinishChange(generateGlaxy);
+datGUI.add(parameters, 'spin').min(-5).max(5).step(0.1).onFinishChange(generateGlaxy);
+datGUI.add(parameters, 'randomness').min(0).max(2).step(0.001).onFinishChange(generateGlaxy);
+datGUI.add(parameters, 'randomnessPower').min(1).max(10).step(0.1).onFinishChange(generateGlaxy);
+datGUI.addColor(parameters, 'insideColor').onFinishChange(generateGlaxy);
+datGUI.addColor(parameters, 'outsideColor').onFinishChange(generateGlaxy);
 
 loop();
