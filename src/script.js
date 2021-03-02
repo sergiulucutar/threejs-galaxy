@@ -6,8 +6,9 @@ import {
 import * as dat from 'dat.gui';
 import { interestPointTypeSelector } from './components/interactions';
 import { gameState } from './components/game';
-import { generateGlaxy } from './components/galaxy';
+import { generateGlaxy, reshapeGalaxy } from './components/galaxy';
 import { createShaper } from './components/shaper';
+import gsap, { Power2 } from 'gsap/gsap-core';
 
 const canvas = document.querySelector('main canvas');
 const sizes = {
@@ -19,8 +20,8 @@ const datGUI = new dat.GUI({
 });
 
 const textureLoader = new THREE.TextureLoader();
-const bgTexture = textureLoader.load('/NormalMap.png');
-const heightMapTexture = textureLoader.load('/NormalMap.png');
+// const bgTexture = textureLoader.load('/NormalMap.png');
+// const heightMapTexture = textureLoader.load('/NormalMap.png');
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 1, 1000);
@@ -83,7 +84,18 @@ const generatePointsOfInterest = () => {
       ),
       element: document.querySelector(`.point[data-id="${i}"]`)
     };
-    point.element.addEventListener('click', () => interestPointTypeSelector.open(point.element));
+    point.element.addEventListener('click', () => {
+      interestPointTypeSelector.open(point.element);
+      cameraControls.enabled = false;
+      camera.lookAt(point.position);
+
+      gsap.to(camera, {
+        zoom: 3,
+        duration: 0.4,
+        ease: Power2.easeInOut,
+        onUpdate: () => camera.updateProjectionMatrix()
+      });
+    });
 
     interestPoints.push(point);
   }
@@ -95,7 +107,9 @@ generatePointsOfInterest();
 const loop = () => {
   //   const enableTime = clock.getElapsedTime();
 
-  cameraControls.update();
+  if(cameraControls.enabled) {
+    cameraControls.update();
+  }
   // shaper.lookAt(camera.position);
 
   for (const point of interestPoints) {
@@ -124,9 +138,10 @@ const getRoundValues = () => {
 }
 
 const nextRound = () => {
-  interestPointTypeSelector.close();
-  const roundValues = getRoundValues();
-  gameState.update(roundValues);
+  // interestPointTypeSelector.close();
+  // const roundValues = getRoundValues();
+  // gameState.update(roundValues);
+  reshapeGalaxy();
 }
 
 document.querySelector('.game_controls button').addEventListener('click', nextRound);
